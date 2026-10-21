@@ -1,0 +1,147 @@
+{
+  "schema": "qlib-math-services-v1",
+  "version": "0.3.0-design",
+  "abi_status": "provisional",
+  "baseline": "QLIB unified math v0.2.1: WinAPE 19/19 vectors passed",
+  "modules": [
+    {
+      "id": "CORE8",
+      "status": "prototype-tested",
+      "services": [
+        "ADD_U8",
+        "SUB_U8",
+        "MUL_U8",
+        "DIVMOD_U8"
+      ],
+      "precision": "unsigned/signed 8-bit primitives"
+    },
+    {
+      "id": "INT16",
+      "status": "partial-prototype",
+      "services": [
+        "ADD_I16",
+        "SUB_I16",
+        "ABS_I16",
+        "SGN_I16",
+        "CMP_I16",
+        "MUL_I16",
+        "DIVMOD_I16"
+      ],
+      "missing": [
+        "CMP_I16",
+        "MUL_I16",
+        "DIVMOD_I16"
+      ]
+    },
+    {
+      "id": "INT32",
+      "status": "planned",
+      "services": [
+        "ADD_I32",
+        "SUB_I32",
+        "CMP_I32",
+        "MUL_I32",
+        "DIVMOD_I32"
+      ]
+    },
+    {
+      "id": "CONVERT",
+      "status": "planned",
+      "services": [
+        "CINT",
+        "CLNG",
+        "CSNG",
+        "CDBL",
+        "VAL",
+        "STR$",
+        "HEX$",
+        "OCT$"
+      ]
+    },
+    {
+      "id": "FIXED",
+      "status": "planned",
+      "services": [
+        "Q8_8_MUL",
+        "Q8_8_DIV",
+        "Q8_8_ROUND",
+        "Q16_16_MUL"
+      ]
+    },
+    {
+      "id": "TRIG",
+      "status": "planned",
+      "services": [
+        "SIN",
+        "COS",
+        "TAN",
+        "ATN"
+      ]
+    },
+    {
+      "id": "FLOAT",
+      "status": "planned",
+      "services": [
+        "SINGLE_ADD",
+        "DOUBLE_ADD",
+        "SQR",
+        "LOG",
+        "EXP",
+        "POW",
+        "INT",
+        "FIX"
+      ]
+    },
+    {
+      "id": "CURRENCY",
+      "status": "planned",
+      "services": [
+        "CUR_ADD",
+        "CUR_SUB",
+        "CUR_MUL",
+        "CUR_DIV"
+      ]
+    },
+    {
+      "id": "RANDOM",
+      "status": "noncompatible-prototype",
+      "services": [
+        "LCG16_STEP",
+        "RND",
+        "RANDOMIZE"
+      ],
+      "note": "LCG is not QBX RND"
+    },
+    {
+      "id": "MATRIX",
+      "status": "prototype-tested-2x2-only",
+      "services": [
+        "MAT2_VEC_S8",
+        "MAT2_MUL",
+        "MAT23_AFFINE",
+        "MAT3_VEC",
+        "MAT3_MUL",
+        "MAT4_MUL"
+      ]
+    }
+  ],
+  "error_codes": {
+    "OK": 0,
+    "DIV0": 1,
+    "OVERFLOW": 2,
+    "DOMAIN": 3,
+    "INVALID_ARG": 4,
+    "MISSING_MODULE": 5,
+    "ABI_MISMATCH": 6
+  },
+  "compatibility": "Microsoft BASIC PDS 7.1 semantics; 8-bit optimization is internal only",
+  "module_requirements": [
+    "document signedness",
+    "register ABI",
+    "edge cases",
+    "reference vectors",
+    "ROM validation",
+    "performance measurements",
+    "per-file license"
+  ]
+}
