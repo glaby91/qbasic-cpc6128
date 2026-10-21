@@ -18,13 +18,13 @@ jobs:
         run: |
           set -euo pipefail
           cd qlib/unified
-          /tmp/rasm-src/rasm.exe QLIB_UNIFIED_ROM.asm -ob QLIB_UNIFIED_V020_TEST.ROM
-          test "$(stat -c%s QLIB_UNIFIED_V020_TEST.ROM)" -eq 16384
-          python3 -c 'b=open("QLIB_UNIFIED_V020_TEST.ROM","rb").read(); n=len(b.rstrip(bytes([255]))); print("USED_BYTES",n,"FREE_BYTES",len(b)-n)'
+          /tmp/rasm-src/rasm.exe QLIB_UNIFIED_ROM.asm -ob QLIB_UNIFIED_V021_TEST.ROM
+          test "$(stat -c%s QLIB_UNIFIED_V021_TEST.ROM)" -eq 16384
+          python3 -c 'b=open("QLIB_UNIFIED_V021_TEST.ROM","rb").read(); n=len(b.rstrip(bytes([255]))); print("USED_BYTES",n,"FREE_BYTES",len(b)-n)'
       - uses: actions/upload-artifact@v4
         with:
-          name: QLIB-MATH-MATRIX-V020
+          name: QLIB-MATH-MATRIX-V021
           path: |
-            qlib/unified/QLIB_UNIFIED_V020_TEST.ROM
+            qlib/unified/QLIB_UNIFIED_V021_TEST.ROM
             tests/math/UNIFIED_MATH_TEST.BAS
           if-no-files-found: error
