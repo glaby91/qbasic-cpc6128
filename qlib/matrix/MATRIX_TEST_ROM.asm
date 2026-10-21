@@ -16,7 +16,7 @@ TEST:
         CALL PRINT
         LD IX,COEFF
         LD IY,VEC
-        LD DE,OUT
+        LD DE,MAT_RESULT
         CALL MAT2_VEC_S8
         LD HL,(MAT_RESULT)
         LD DE,22
