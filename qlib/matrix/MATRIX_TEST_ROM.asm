@@ -5,6 +5,7 @@
         JP INIT
         JP TEST
 NAMES:
+        DB 'QMA','T'+#80
         DB 'M2TES','T'+#80
         DB 0
 INIT:
