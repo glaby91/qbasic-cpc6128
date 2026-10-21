@@ -1,12 +1,14 @@
-; QLIB UNIFIED MATH v0.4.0 — CPC6128 ROM ; startup-safe RSX |MALLTEST
+; QLIB UNIFIED MATH v0.4.1 — CPC6128 ROM ; startup-safe RSX |MALLTEST
         ORG #C000
-        DB 1,0,4,0
+        DB 1,0,4,1
         DW RSX_NAMES
         JP ROM_INIT
         JP RUN_TESTS
+        JP RUN_BENCH
 RSX_NAMES:
         DB 'QLIB','M'+#80
         DB 'MALLTES','T'+#80
+        DB 'MBENC','H'+#80
         DB 0
 ROM_INIT:
         SCF
@@ -861,7 +863,7 @@ MAT_VEC1: DB 6,8
 ; [[-1,2],[3,-4]] * [4,-5] = [-14,32]
 MAT_COEFF2: DB #FF,2,3,#FC
 MAT_VEC2: DB 4,#FB
-MSG_TITLE: DB 13,10,'QLIB MATH + MATRIX v0.4.0',13,10,0
+MSG_TITLE: DB 13,10,'QLIB MATH + MATRIX v0.4.1',13,10,0
 MSG_ADD: DB 'ADD8: ',0
 MSG_ADD_WRAP: DB 'ADD8 WRAP: ',0
 MSG_SUB: DB 'SUB8: ',0
@@ -899,5 +901,44 @@ MSG_COS0: DB 'COS8 0: ',0
 MSG_ALL: DB 'ALL TESTS: ',0
 MSG_PASS: DB 'PASS',13,10,0
 MSG_FAIL: DB 'FAIL',13,10,0
+
+
+; |MBENCH silent benchmark: 10000 products 13*17, and 10000 integer adds.
+; Store final products at #9010/11, sums at #9012/13, never write ROM.
+; Clock should be measured by BASIC TIME around the RSX call.
+BENCH_MUL_RESULT EQU #9010
+BENCH_ADD_RESULT EQU #9012
+RUN_BENCH:
+        LD HL,10000
+        LD (BENCH_COUNTER),HL
+BM_LOOP:
+        LD A,13
+        LD B,17
+        CALL MUL_U8
+        LD (BENCH_MUL_RESULT),HL
+        LD HL,(BENCH_COUNTER)
+        DEC HL
+        LD (BENCH_COUNTER),HL
+        LD A,H
+        OR L
+        JR NZ,BM_LOOP
+
+        LD HL,10000
+        LD (BENCH_COUNTER),HL
+        LD HL,0
+BA_LOOP:
+        LD DE,1
+        CALL ADD_I16
+        PUSH HL
+        LD HL,(BENCH_COUNTER)
+        DEC HL
+        LD (BENCH_COUNTER),HL
+        LD A,H
+        OR L
+        POP HL
+        JR NZ,BA_LOOP
+        LD (BENCH_ADD_RESULT),HL
+        RET
+BENCH_COUNTER EQU #9014
 
         DEFS #10000-$,#FF
