@@ -453,7 +453,7 @@ MAT1_REPORT:
         SBC HL,DE
         JR NZ,MAT2_FAIL
         LD HL,(MAT_OUT+2)
-        LD DE,14
+        LD DE,32
         OR A
         SBC HL,DE
         JR MAT2_REPORT
