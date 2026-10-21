@@ -1,8 +1,7 @@
-; QLIB UNIFIED MATH v0.2 — CPC6128 ROM ; single RSX |MALLTEST
+; QLIB UNIFIED MATH v0.2.1 — CPC6128 ROM ; single RSX |MALLTEST
         ORG #C000
         DB 1,0,2,0
         DW RSX_NAMES
-        JP ROM_INIT
         JP RUN_TESTS
 RSX_NAMES:
         DB 'MALLTES','T'+#80
