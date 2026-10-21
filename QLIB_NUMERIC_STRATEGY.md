@@ -1,25 +1,30 @@
-# QLIB/QCOMP — stratégie numérique : voie rapide INTEGER 16 bits
+# QLIB/QCOMP — stratégie numérique : chemin rapide 8 bits
 
-## Décision
-Sur CPC6128, optimiser d'abord les opérations 16 bits des programmes BASIC usuels, sans sacrifier le support QBX 7.1 des autres types. L'estimation « 90 % des programmes » est un objectif de conception non mesuré, et non un fait établi. La résolution vidéo (MODE 0/1/2) n'impose aucune limite à la précision numérique.
+## Décision du projet
+**Priorité d'optimisation : 8 bits → 16 bits → 32 bits / flottants / 64 bits uniquement quand ils sont nécessaires.** La conception doit viser les programmes classiques du CPC6128 et limiter la consommation de cycles, de ROM et de RAM.
 
-## Modèle
-- `INTEGER` : signé 16 bits, -32768..32767, voie rapide par registres Z80 et routines minimalistes.
-- `LONG` : signé 32 bits, conservé lorsqu'exigé par le type ou les calculs.
-- `SINGLE` et `DOUBLE` : support à fournir avec comportement Microsoft BASIC 7.1 vérifié, pas remplacement implicite par des entiers.
-- `CURRENCY` : support à qualifier pour les programmes utilisant le calcul exact à échelle fixe.
-- Conserver les règles de promotions, conversions et débordements QBX 7.1 ; optimisation uniquement si équivalence de comportement démontrée.
+## Compatibilité impérative Microsoft BASIC PDS / QBX 7.1
+- Le type `INTEGER` de QBX reste **signé 16 bits** ; il ne devient pas un type BASIC 8 bits.
+- QCOMP peut utiliser une représentation interne 8 bits ou une séquence Z80 8 bits uniquement si le résultat, les règles de conversion et les erreurs observables sont **identiques** à QBX.
+- Les bornes 0..255 (octet non signé) et -128..127 (octet signé) sont distinctes. L'optimiseur ne doit pas confondre signedness, comparaisons, retenues, dépassements ou promotions.
+- En cas de doute sur la plage de valeurs ou d'un calcul susceptible de déborder 8 bits, employer la voie 16 bits.
+- `LONG`, `SINGLE`, `DOUBLE` et `CURRENCY` restent disponibles dans des modules QLIB adaptés, mais ne sont pas le chemin d'exécution préféré.
+- Aucun changement silencieux de résultat ni suppression des erreurs BASIC requises.
 
-## Division du travail
-- **QCOMP** : résolution des types ; séquences Z80 inline pour les opérations INTEGER courtes quand elles sont réellement plus économiques ; appel QLIB sinon.
-- **QLIB_MATH** : une implémentation de référence optimisée pour chaque opération plus complexe (multiplication, division, conversion, 32 bits, flottants), avec tests.
-- Ne pas dupliquer les routines complexes dans les binaires : comparer taille des appels, temps CPU et coût des commutations ROM.
+## Stratégie technique
+1. **8 bits rapide** : états booléens, caractères, tableaux de pixels/attributs, indices prouvés bornés, coordonnées Y (0..199), petits compteurs. Sur Z80, utiliser A/B/C/D/E/H/L et les opérations courtes selon mesure.
+2. **16 bits de repli** : `INTEGER` général, coordonnées X jusqu'à 639, adresses et pointeurs, compteurs dépassant 255, opérations à risque de retenue/débordement.
+3. **Formats étendus à la demande** : longs compteurs, calculs fractionnaires, trigonométrie, science et monnaie quand la sémantique QBX les exige.
+4. **QLIB** centralise les primitives Z80 optimisées, l'ABI et les tests ; **QCOMP** sélectionne le chemin correspondant à la preuve des bornes.
+5. Mesurer la taille du code, les cycles, les registres modifiés, l'accès RAM et les coûts d'appels inter-ROM. Une opération 8 bits optimisée ne doit pas être plus coûteuse que l'alternative 16 bits sans bénéfice.
 
-## Mesures et acceptation
-1. Benchmarks I16 : addition, soustraction, comparaisons, incrémentation, boucles, produit, division et limites.
-2. Mesurer cycles, octets de code, RAM, coût d'un appel direct et d'un appel inter-ROM.
-3. Tests différentiels QBX : typage, division entière et réelle, dépassements et erreurs.
-4. Comparer programmes de graphismes, jeux et calculs, sans inférer l'utilisation 16 bits de la seule définition d'écran.
+## Cas de validation essentiels
+- `I%=200` puis `I%=I%+100` doit donner 300 : aucun troncage à 8 bits.
+- `I%=255` puis `I%=I%+1` doit donner 256.
+- `I%= -1` ; comparaisons contre 1 et 255 : respect du signe.
+- Boucle `FOR I%=0 TO 199` : optimisation 8 bits possible si sa progression et sortie sont prouvées sûres.
+- Boucle `FOR I%=0 TO 255` : attention à l'incrément terminal et au passage à 256.
+- Pour les graphismes CPC : X en MODE 2 peut atteindre 639, donc pas de supposition « toute coordonnée est un octet ».
 
 ## État
-Décision architecturale documentée uniquement. Pas de code ROM/compilateur supplémentaire dans ce commit.
+Décision de conception, **pas** une implémentation QCOMP/QLIB validée. B005 sur `main` conservée.
