@@ -17,6 +17,40 @@ QLIB_INFO:
         LD HL,#0001
         RET
 
+; Fixed public diagnostic entry: CALL #C040 from RAM, C=service ID.
+; C=0 ADD_U8 (A,B -> A), 1 MUL_U8 (A,B -> HL),
+; C=2 DIVMOD_U8 (H,L -> A quotient, B remainder),
+; C=3 ISQRT_U16 (HL -> A), 4 LCG16_STEP (HL -> HL).
+; Changing this ABI requires incrementing the interface version.
+        DEFS #C040-$,#FF
+QLIB_MATH_API:
+        LD E,A
+        LD A,C
+        OR A
+        JR Z,API_ADD
+        CP 1
+        JR Z,API_MUL
+        CP 2
+        JR Z,API_DIV
+        CP 3
+        JR Z,API_SQRT
+        CP 4
+        JR Z,API_RND
+        SCF
+        RET
+API_ADD:
+        LD A,E
+        JP ADD_U8
+API_MUL:
+        LD A,E
+        JP MUL_U8
+API_DIV:
+        JP DIVMOD_U8
+API_SQRT:
+        JP ISQRT_U16
+API_RND:
+        JP LCG16_STEP
+
 ; Registers/flags are specified per primitive.
 ; ADD_U8: A+B -> A; carry flags ordinary Z80 arithmetic.
 ADD_U8:
