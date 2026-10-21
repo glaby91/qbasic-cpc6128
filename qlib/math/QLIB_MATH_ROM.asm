@@ -1,11 +1,10 @@
-; QLIB_MATH v0.1 / CPC6128 - standalone prototype upper ROM
+; QLIB_MATH v0.1.2 / CPC6128 - standalone prototype upper ROM
 ; Primitive calls are INTERNAL until a bank-switch ABI has been validated.
 ; Copyright project contributors. MIT.
         ORG #C000
         DB 1,0,1,0
         DW QLIB_NAMES
         JP QLIB_INIT
-        JP QLIB_INFO
         JP QLIB_SELFTEST
 QLIB_NAMES:
         DB 'QLIB','M'+#80
