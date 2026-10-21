@@ -32,6 +32,20 @@ CAS_OUT_CLOSE   EQU #BC8F
 CAS_OUT_CHAR    EQU #BC95
 CAS_OUT_ABANDON EQU #BC92
 
+; Disk calls from expansion ROM must return through RAM, because firmware
+; jumpblock can disable the upper ROM while invoking AMSDOS.
+; 7 wrappers x 17 bytes = 119 bytes at #8C00..#8C76.
+; EXPERIMENTAL: ROM slot 1 only. Do not use for important data.
+DISK_BRIDGE_RAM EQU #8C00
+DISK_BRIDGE_SIZE EQU 17
+BR_IN_OPEN     EQU DISK_BRIDGE_RAM+0*DISK_BRIDGE_SIZE
+BR_IN_CLOSE    EQU DISK_BRIDGE_RAM+1*DISK_BRIDGE_SIZE
+BR_IN_CHAR     EQU DISK_BRIDGE_RAM+2*DISK_BRIDGE_SIZE
+BR_OUT_OPEN    EQU DISK_BRIDGE_RAM+3*DISK_BRIDGE_SIZE
+BR_OUT_CLOSE   EQU DISK_BRIDGE_RAM+4*DISK_BRIDGE_SIZE
+BR_OUT_CHAR    EQU DISK_BRIDGE_RAM+5*DISK_BRIDGE_SIZE
+BR_OUT_ABANDON EQU DISK_BRIDGE_RAM+6*DISK_BRIDGE_SIZE
+
 DOC_BASE        EQU #6000    ; only 21 visible plain-text lines live here
 LINE_BYTES      EQU 80
 MAX_LINES       EQU 1500
@@ -123,6 +137,11 @@ ROM_INIT:
         RET
 
 EDITOR_START:
+        ; Install RAM-resident CAS return stubs before any disk access.
+        LD HL,DISK_BRIDGE_ROM
+        LD DE,DISK_BRIDGE_RAM
+        LD BC,DISK_BRIDGE_END-DISK_BRIDGE_ROM
+        LDIR
         ; BASIC must have reserved DOC_BASE..IO_BUFFER+2047 using MEMORY &5FFF.
         CALL SAVE_DISPLAY_STATE
         CALL NEW_DOCUMENT
@@ -478,7 +497,70 @@ COPY_ROM_NEXT:
         INC HL
         INC DE
         DJNZ COPY_ROM_NEXT
-COPY_ROM_END:
+COPY_
+; Each wrapper is 17 bytes; only absolute calls to firmware, no ROM-local
+; references or jumps. Restore all CAS return registers/flags after selecting
+; upper ROM 1. Core CAS operation is executed while in RAM.
+DISK_BRIDGE_ROM:
+BRIDGE_IMAGE_IN_OPEN:
+        DB #CD
+        DW CAS_IN_OPEN
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_IN_CLOSE:
+        DB #CD
+        DW CAS_IN_CLOSE
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_IN_CHAR:
+        DB #CD
+        DW CAS_IN_CHAR
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_OUT_OPEN:
+        DB #CD
+        DW CAS_OUT_OPEN
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_OUT_CLOSE:
+        DB #CD
+        DW CAS_OUT_CLOSE
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_OUT_CHAR:
+        DB #CD
+        DW CAS_OUT_CHAR
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_OUT_ABANDON:
+        DB #CD
+        DW CAS_OUT_ABANDON
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+DISK_BRIDGE_END:
+
+ROM_END:
         LD A,(HL)
         CP #FF
         JR Z,COPY_ROM_PAD
@@ -1234,7 +1316,7 @@ SAVE_FILE:
         LD HL,FILE_NAME_RAM
         LD B,8
         LD DE,IO_BUFFER
-        CALL CAS_OUT_OPEN
+        CALL BR_OUT_OPEN
         JP NC,FILE_SAVE_OPEN_ERROR
         LD HL,0
         LD (SAVE_INDEX),HL
@@ -1261,7 +1343,7 @@ SAVE_CHARS:
         LD A,(HL)
         PUSH HL
         PUSH BC
-        CALL CAS_OUT_CHAR
+        CALL BR_OUT_CHAR
         POP BC
         POP HL
         JR NC,SAVE_ABORT
@@ -1269,10 +1351,10 @@ SAVE_CHARS:
         DJNZ SAVE_CHARS
 SAVE_NEWLINE:
         LD A,13
-        CALL CAS_OUT_CHAR
+        CALL BR_OUT_CHAR
         JR NC,SAVE_ABORT
         LD A,10
-        CALL CAS_OUT_CHAR
+        CALL BR_OUT_CHAR
         JR NC,SAVE_ABORT
         LD HL,(SAVE_INDEX)
         INC HL
@@ -1281,12 +1363,12 @@ SAVE_NEWLINE:
         OR A
         SBC HL,DE
         JR NZ,SAVE_NEXT_ROW
-        CALL CAS_OUT_CLOSE
+        CALL BR_OUT_CLOSE
         JP NC,FILE_SAVE_CLOSE_ERROR
         LD HL,MSG_SAVED
         JP SHOW_MESSAGE
 SAVE_ABORT:
-        CALL CAS_OUT_ABANDON
+        CALL BR_OUT_ABANDON
         LD HL,MSG_SAVE_WRITE_ERROR
         JP SHOW_MESSAGE
 FILE_SAVE_OPEN_ERROR:
@@ -1303,14 +1385,14 @@ LOAD_FILE:
         LD HL,FILE_NAME_RAM
         LD B,8
         LD DE,IO_BUFFER
-        CALL CAS_IN_OPEN
+        CALL BR_IN_OPEN
         JP NC,FILE_LOAD_ERROR
         CALL NEW_DOCUMENT
         LD HL,0
         LD (SAVE_INDEX),HL
         CALL INIT_IMPORT_LINE
 LOAD_BYTE:
-        CALL CAS_IN_CHAR
+        CALL BR_IN_CHAR
         JR NC,LOAD_DONE
         CP 10
         JR Z,LOAD_BYTE
@@ -1342,12 +1424,12 @@ LOAD_NEWLINE:
         JR LOAD_BYTE
 LOAD_DONE:
         CALL STORE_IMPORT_LINE
-        CALL CAS_IN_CLOSE
+        CALL BR_IN_CLOSE
         CALL CACHE_BUILD
         LD HL,MSG_LOADED
         JP SHOW_MESSAGE
 LOAD_LIMIT:
-        CALL CAS_IN_CLOSE
+        CALL BR_IN_CLOSE
         CALL CACHE_BUILD
         LD HL,MSG_LIMIT
         JP SHOW_MESSAGE
