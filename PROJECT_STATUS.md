@@ -39,3 +39,14 @@
 4. Spécifier ABI inter-ROM et amorcer QCOMP une fois les primitives testées.
 
 La branche `main` conserve la base QEDIT B005 ; les éléments en chantier ne sont pas fusionnés automatiquement.
+
+## Mise à jour — QLIB v0.4 (21 octobre 2026)
+
+**QLIB MATH + MATRIX v0.4 : 31/31 PASS sous WinAPE**, rapport de validation utilisateur dans la branche `qlib-math-v040-expanded` : [WINAPE_VALIDATION_V040.md](https://github.com/glaby91/qbasic-cpc6128/blob/qlib-math-v040-expanded/qlib/unified/WINAPE_VALIDATION_V040.md).
+
+- ROM de 16 384 octets : **1 976 octets occupés**, **14 408 octets de remplissage**.
+- [Build GitHub Actions 39646043619](https://github.com/glaby91/qbasic-cpc6128/actions/runs/39646043619), artefact de la ROM `QLIB_UNIFIED_V040_TEST.ROM`.
+- 31 tests exécutés avec `|MALLTEST` ; toutes les lignes PASS selon le retour utilisateur.
+- Branches et périmètre : `main` conserve QEDIT B005 ; `qedit-b006-syntax` contient les choix d'analyseur et de compatibilité ; `qcomp-dev` prépare le compilateur ; `qlib-unified-v031-rsx-fix` conserve la ROM précédente 23/23 PASS ; `qlib-math-v040-expanded` fournit la nouvelle ROM mathématique.
+- **Non implémenté :** fonctions QBX complètes SINGLE/DOUBLE/CURRENCY, trigonométrie en radians compatible, conversions complètes, ABI QCOMP→QLIB. Ne pas confondre les 31 tests réussis avec une validation exhaustive des calculs.
+- Les historiques des autres branches restent intacts ; aucune fusion silencieuse du code de développement dans `main`.
