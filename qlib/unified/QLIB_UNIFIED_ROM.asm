@@ -1,6 +1,6 @@
-; QLIB UNIFIED MATH v0.3.1 — CPC6128 ROM ; startup-safe RSX |MALLTEST
+; QLIB UNIFIED MATH v0.4.0 — CPC6128 ROM ; startup-safe RSX |MALLTEST
         ORG #C000
-        DB 1,0,3,1
+        DB 1,0,4,0
         DW RSX_NAMES
         JP ROM_INIT
         JP RUN_TESTS
@@ -379,6 +379,72 @@ MAT3_VEC_S8:
         INC DE
         RET
 
+
+; QLIB v0.4 additions. Private entry points: ABI not finalized.
+; UDIV16: HL dividend, DE non-zero divisor -> HL quotient, BC remainder.
+; CF=1 if divisor=0; repeated subtraction baseline, not optimized.
+UDIV16:
+        LD A,D
+        OR E
+        JR NZ,UD16_GO
+        SCF
+        RET
+UD16_GO:
+        LD BC,0
+UD16_LOOP:
+        OR A
+        SBC HL,DE
+        JR C,UD16_DONE
+        INC BC
+        JR UD16_LOOP
+UD16_DONE:
+        ADD HL,DE
+        PUSH HL
+        LD H,B
+        LD L,C
+        POP BC
+        OR A
+        RET
+
+; FX88_ADD / FX88_SUB: HL,DE signed Q8.8 -> HL (wrapping).
+FX88_ADD:
+        ADD HL,DE
+        RET
+FX88_SUB:
+        OR A
+        SBC HL,DE
+        RET
+
+; TRIG_SIN8: A=full-turn phase 0..255 -> signed A=-127..127.
+; 256-byte table, one lookup, approximate; NOT Microsoft QBX SIN.
+TRIG_SIN8:
+        LD L,A
+        LD H,0
+        LD DE,SIN256_TABLE
+        ADD HL,DE
+        LD A,(HL)
+        RET
+TRIG_COS8:
+        ADD A,64
+        JP TRIG_SIN8
+SIN256_TABLE:
+        DB #00,#03,#06,#09,#0C,#10,#13,#16,#19,#1C,#1F,#22,#25,#28,#2B,#2E
+        DB #31,#33,#36,#39,#3C,#3F,#41,#44,#47,#49,#4C,#4E,#51,#53,#55,#58
+        DB #5A,#5C,#5E,#60,#62,#64,#66,#68,#6A,#6B,#6D,#6F,#70,#71,#73,#74
+        DB #75,#76,#78,#79,#7A,#7A,#7B,#7C,#7D,#7D,#7E,#7E,#7E,#7F,#7F,#7F
+        DB #7F,#7F,#7F,#7F,#7E,#7E,#7E,#7D,#7D,#7C,#7B,#7A,#7A,#79,#78,#76
+        DB #75,#74,#73,#71,#70,#6F,#6D,#6B,#6A,#68,#66,#64,#62,#60,#5E,#5C
+        DB #5A,#58,#55,#53,#51,#4E,#4C,#49,#47,#44,#41,#3F,#3C,#39,#36,#33
+        DB #31,#2E,#2B,#28,#25,#22,#1F,#1C,#19,#16,#13,#10,#0C,#09,#06,#03
+        DB #00,#FD,#FA,#F7,#F4,#F0,#ED,#EA,#E7,#E4,#E1,#DE,#DB,#D8,#D5,#D2
+        DB #CF,#CD,#CA,#C7,#C4,#C1,#BF,#BC,#B9,#B7,#B4,#B2,#AF,#AD,#AB,#A8
+        DB #A6,#A4,#A2,#A0,#9E,#9C,#9A,#98,#96,#95,#93,#91,#90,#8F,#8D,#8C
+        DB #8B,#8A,#88,#87,#86,#86,#85,#84,#83,#83,#82,#82,#82,#81,#81,#81
+        DB #81,#81,#81,#81,#82,#82,#82,#83,#83,#84,#85,#86,#86,#87,#88,#8A
+        DB #8B,#8C,#8D,#8F,#90,#91,#93,#95,#96,#98,#9A,#9C,#9E,#A0,#A2,#A4
+        DB #A6,#A8,#AB,#AD,#AF,#B2,#B4,#B7,#B9,#BC,#BF,#C1,#C4,#C7,#CA,#CD
+        DB #CF,#D2,#D5,#D8,#DB,#DE,#E1,#E4,#E7,#EA,#ED,#F0,#F4,#F7,#FA,#FD
+
 ; Each line displays PASS or FAIL. RAM workspace at #9000..#9007.
 RUN_TESTS:
         XOR A
@@ -681,6 +747,82 @@ M3_SHOW:
         LD HL,MSG_MAT3
         CALL REPORT_Z
 
+
+        LD HL,1000
+        LD DE,10
+        CALL UDIV16
+        JR C,TEST_UDIV_BAD
+        LD A,H
+        OR A
+        JR NZ,TEST_UDIV_BAD
+        LD A,L
+        CP 100
+        JR NZ,TEST_UDIV_BAD
+        LD A,B
+        OR C
+        JR TEST_UDIV_SHOW
+TEST_UDIV_BAD:
+        LD A,1
+        OR A
+TEST_UDIV_SHOW:
+        LD HL,MSG_UDIV
+        CALL REPORT_Z
+
+        LD HL,100
+        LD DE,0
+        CALL UDIV16
+        JR C,TEST_DIV0_OK
+        LD A,1
+        OR A
+        JR TEST_DIV0_SHOW
+TEST_DIV0_OK:
+        XOR A
+TEST_DIV0_SHOW:
+        LD HL,MSG_UDIV0
+        CALL REPORT_Z
+
+        LD HL,#0180
+        LD DE,#0080
+        CALL FX88_ADD
+        LD DE,#0200
+        OR A
+        SBC HL,DE
+        LD HL,MSG_FXADD
+        CALL REPORT_Z
+
+        LD HL,#0180
+        LD DE,#0080
+        CALL FX88_SUB
+        LD DE,#0100
+        OR A
+        SBC HL,DE
+        LD HL,MSG_FXSUB
+        CALL REPORT_Z
+
+        XOR A
+        CALL TRIG_SIN8
+        OR A
+        LD HL,MSG_SIN0
+        CALL REPORT_Z
+
+        LD A,64
+        CALL TRIG_SIN8
+        CP 127
+        LD HL,MSG_SIN90
+        CALL REPORT_Z
+
+        LD A,128
+        CALL TRIG_SIN8
+        OR A
+        LD HL,MSG_SIN180
+        CALL REPORT_Z
+
+        XOR A
+        CALL TRIG_COS8
+        CP 127
+        LD HL,MSG_COS0
+        CALL REPORT_Z
+
         LD A,(FAIL_COUNT)
         OR A
         LD HL,MSG_ALL
@@ -719,7 +861,7 @@ MAT_VEC1: DB 6,8
 ; [[-1,2],[3,-4]] * [4,-5] = [-14,32]
 MAT_COEFF2: DB #FF,2,3,#FC
 MAT_VEC2: DB 4,#FB
-MSG_TITLE: DB 13,10,'QLIB MATH + MATRIX v0.3.1',13,10,0
+MSG_TITLE: DB 13,10,'QLIB MATH + MATRIX v0.4.0',13,10,0
 MSG_ADD: DB 'ADD8: ',0
 MSG_ADD_WRAP: DB 'ADD8 WRAP: ',0
 MSG_SUB: DB 'SUB8: ',0
@@ -746,6 +888,14 @@ MSG_MUL16: DB 'MUL16: ',0
 MSG_MUL16WRAP: DB 'MUL16 WRAP: ',0
 MSG_MAT23: DB 'MATRIX 2x3: ',0
 MSG_MAT3: DB 'MATRIX 3x3: ',0
+MSG_UDIV: DB 'DIV16: ',0
+MSG_UDIV0: DB 'DIV16 /0: ',0
+MSG_FXADD: DB 'FIXED ADD: ',0
+MSG_FXSUB: DB 'FIXED SUB: ',0
+MSG_SIN0: DB 'SIN8 0: ',0
+MSG_SIN90: DB 'SIN8 90: ',0
+MSG_SIN180: DB 'SIN8 180: ',0
+MSG_COS0: DB 'COS8 0: ',0
 MSG_ALL: DB 'ALL TESTS: ',0
 MSG_PASS: DB 'PASS',13,10,0
 MSG_FAIL: DB 'FAIL',13,10,0
