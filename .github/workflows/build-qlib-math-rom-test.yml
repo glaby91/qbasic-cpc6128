@@ -22,13 +22,13 @@ jobs:
         run: |
           set -euo pipefail
           cd qlib/math
-          /tmp/rasm-src/rasm.exe QLIB_MATH_ROM.asm -ob QLIB_MATH_V011_TEST.ROM
-          test "$(stat -c%s QLIB_MATH_V011_TEST.ROM)" -eq 16384
-          python3 -c 'b=open("QLIB_MATH_V011_TEST.ROM","rb").read(); n=len(b.rstrip(bytes([255]))); print("USED_BYTES",n,"FREE_BYTES",len(b)-n)'
+          /tmp/rasm-src/rasm.exe QLIB_MATH_ROM.asm -ob QLIB_MATH_V012_TEST.ROM
+          test "$(stat -c%s QLIB_MATH_V012_TEST.ROM)" -eq 16384
+          python3 -c 'b=open("QLIB_MATH_V012_TEST.ROM","rb").read(); n=len(b.rstrip(bytes([255]))); print("USED_BYTES",n,"FREE_BYTES",len(b)-n)'
       - uses: actions/upload-artifact@v4
         with:
-          name: QLIB-MATH-V011-BASIC-SELFTEST
+          name: QLIB-MATH-V012-BASIC-SELFTEST
           path: |
-            qlib/math/QLIB_MATH_V011_TEST.ROM
+            qlib/math/QLIB_MATH_V012_TEST.ROM
             tests/math/QLIB_MATH_TEST.BAS
           if-no-files-found: error
