@@ -61,9 +61,11 @@ MAT2_VEC_S8:
         POP DE
         ADD HL,DE
         POP DE
-        LD (DE),L
+        LD A,L
+        LD (DE),A
         INC DE
-        LD (DE),H
+        LD A,H
+        LD (DE),A
         INC DE
         PUSH DE
         LD A,(IX+2)
@@ -76,9 +78,11 @@ MAT2_VEC_S8:
         POP DE
         ADD HL,DE
         POP DE
-        LD (DE),L
+        LD A,L
+        LD (DE),A
         INC DE
-        LD (DE),H
+        LD A,H
+        LD (DE),A
         RET
 
 ; Matrix 3x3 and Q8.8: next development tranche after tests.
