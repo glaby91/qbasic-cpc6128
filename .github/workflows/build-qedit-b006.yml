@@ -21,7 +21,15 @@ jobs:
         run: |
           set -euo pipefail
           cd editor
-          /tmp/rasm-src/rasm.exe QEDIT_ROM.asm -ob QEDIT_V042_B006_CAS_TEST.ROM
+          set +e
+          /tmp/rasm-src/rasm.exe QEDIT_ROM.asm -ob QEDIT_V042_B006_CAS_TEST.ROM > /tmp/qedit-rasm.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/qedit-rasm.log
+          if [ "$rc" -ne 0 ]; then
+            echo "::error title=RASM failed::Assembler returned code $rc. Review RASM output above."
+            exit "$rc"
+          fi
           test "$(stat -c%s QEDIT_V042_B006_CAS_TEST.ROM)" -eq 16384
           python3 - <<'PY'
           from pathlib import Path
