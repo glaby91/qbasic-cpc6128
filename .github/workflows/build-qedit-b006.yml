@@ -1,0 +1,38 @@
+name: Build QEDIT B006 CAS experimental ROM
+on:
+  push:
+    branches: [qedit-b006-cas-ram-bridge]
+    paths:
+      - 'editor/**'
+      - '.github/workflows/build-qedit-b006.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build RASM
+        run: |
+          git clone --depth 1 --branch v3.2.4bis https://github.com/EdouardBERGE/rasm.git /tmp/rasm-src
+          make -C /tmp/rasm-src release
+      - name: Assemble B006 and validate image
+        run: |
+          set -euo pipefail
+          cd editor
+          /tmp/rasm-src/rasm.exe QEDIT_ROM.asm -ob QEDIT_V042_B006_CAS_TEST.ROM
+          test "$(stat -c%s QEDIT_V042_B006_CAS_TEST.ROM)" -eq 16384
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('QEDIT_V042_B006_CAS_TEST.ROM').read_bytes()
+          used=len(b.rstrip(b'\xff'))
+          print('USED_BYTES',used,'FREE_BYTES',len(b)-used)
+          assert len(b)==16384
+          PY
+      - name: Upload experimental image
+        uses: actions/upload-artifact@v4
+        with:
+          name: QEDIT-v0.4.2-B006-CAS-EXPERIMENTAL
+          path: editor/QEDIT_V042_B006_CAS_TEST.ROM
+          if-no-files-found: error
