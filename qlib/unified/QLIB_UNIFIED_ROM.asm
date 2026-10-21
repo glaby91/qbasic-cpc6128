@@ -1,6 +1,6 @@
-; QLIB UNIFIED MATH v0.2.1 — CPC6128 ROM ; single RSX |MALLTEST
+; QLIB UNIFIED MATH v0.3.0 — CPC6128 ROM ; single RSX |MALLTEST
         ORG #C000
-        DB 1,0,2,0
+        DB 1,0,3,0
         DW RSX_NAMES
         JP RUN_TESTS
 RSX_NAMES:
@@ -223,6 +223,159 @@ MAT2_VEC_S8:
 
 ; Matrix 3x3 and Q8.8: next development tranche after tests.
 
+
+
+; MUL16_LO: unsigned 16x16 -> low 16 bits HL (mod 65536).
+; Entry HL=x, DE=y. Clobbers AF,BC,DE. No overflow indication.
+MUL16_LO:
+        LD B,H
+        LD C,L
+        LD HL,0
+        LD A,16
+M16_LOOP:
+        SRL D
+        RR E
+        JR NC,M16_SKIP
+        ADD HL,BC
+M16_SKIP:
+        SLA C
+        RL B
+        DEC A
+        JR NZ,M16_LOOP
+        RET
+
+; MAT23_VEC_S8: IX -> 6 signed bytes [a,b,tx,c,d,ty],
+; IY -> signed x,y; DE -> 2 signed 16-bit outputs.
+MAT23_VEC_S8:
+        PUSH DE
+        LD A,(IX+0)
+        LD B,(IY+0)
+        CALL MAT_MUL_S8
+        PUSH HL
+        LD A,(IX+1)
+        LD B,(IY+1)
+        CALL MAT_MUL_S8
+        POP DE
+        ADD HL,DE
+        LD A,(IX+2)
+        LD E,A
+        LD D,0
+        BIT 7,E
+        JR Z,M23_TXPOS
+        DEC D
+M23_TXPOS:
+        ADD HL,DE
+        POP DE
+        LD A,L
+        LD (DE),A
+        INC DE
+        LD A,H
+        LD (DE),A
+        INC DE
+        PUSH DE
+        LD A,(IX+3)
+        LD B,(IY+0)
+        CALL MAT_MUL_S8
+        PUSH HL
+        LD A,(IX+4)
+        LD B,(IY+1)
+        CALL MAT_MUL_S8
+        POP DE
+        ADD HL,DE
+        LD A,(IX+5)
+        LD E,A
+        LD D,0
+        BIT 7,E
+        JR Z,M23_TYPOS
+        DEC D
+M23_TYPOS:
+        ADD HL,DE
+        POP DE
+        LD A,L
+        LD (DE),A
+        INC DE
+        LD A,H
+        LD (DE),A
+        RET
+
+; MAT3_VEC_S8: 3x3 signed byte matrix at IX (row-major),
+; signed 3-vector at IY. DE -> 3 signed 16-bit outputs.
+; Accumulates each row in signed 16 bits.
+MAT3_VEC_S8:
+        PUSH DE
+        LD A,(IX+0)
+        LD B,(IY+0)
+        CALL MAT_MUL_S8
+        PUSH HL
+        LD A,(IX+1)
+        LD B,(IY+1)
+        CALL MAT_MUL_S8
+        POP DE
+        ADD HL,DE
+        PUSH HL
+        LD A,(IX+2)
+        LD B,(IY+2)
+        CALL MAT_MUL_S8
+        POP DE
+        ADD HL,DE
+        POP DE
+        LD A,L
+        LD (DE),A
+        INC DE
+        LD A,H
+        LD (DE),A
+        INC DE
+        PUSH DE
+        POP DE
+        PUSH DE
+        LD A,(IX+3)
+        LD B,(IY+0)
+        CALL MAT_MUL_S8
+        PUSH HL
+        LD A,(IX+4)
+        LD B,(IY+1)
+        CALL MAT_MUL_S8
+        POP DE
+        ADD HL,DE
+        PUSH HL
+        LD A,(IX+5)
+        LD B,(IY+2)
+        CALL MAT_MUL_S8
+        POP DE
+        ADD HL,DE
+        POP DE
+        LD A,L
+        LD (DE),A
+        INC DE
+        LD A,H
+        LD (DE),A
+        INC DE
+        PUSH DE
+        POP DE
+        PUSH DE
+        LD A,(IX+6)
+        LD B,(IY+0)
+        CALL MAT_MUL_S8
+        PUSH HL
+        LD A,(IX+7)
+        LD B,(IY+1)
+        CALL MAT_MUL_S8
+        POP DE
+        ADD HL,DE
+        PUSH HL
+        LD A,(IX+8)
+        LD B,(IY+2)
+        CALL MAT_MUL_S8
+        POP DE
+        ADD HL,DE
+        POP DE
+        LD A,L
+        LD (DE),A
+        INC DE
+        LD A,H
+        LD (DE),A
+        INC DE
+        RET
 
 ; Each line displays PASS or FAIL. RAM workspace at #9000..#9007.
 RUN_TESTS:
@@ -462,6 +615,70 @@ MAT2_REPORT:
         LD HL,MSG_MAT2
         CALL REPORT_Z
 
+
+        LD HL,123
+        LD DE,456
+        CALL MUL16_LO
+        LD DE,56088
+        OR A
+        SBC HL,DE
+        LD HL,MSG_MUL16
+        CALL REPORT_Z
+
+        LD HL,#FFFF
+        LD DE,2
+        CALL MUL16_LO
+        LD DE,#FFFE
+        OR A
+        SBC HL,DE
+        LD HL,MSG_MUL16WRAP
+        CALL REPORT_Z
+
+        LD IX,MAT23_COEFF
+        LD IY,MAT_VEC1
+        LD DE,MAT_OUT
+        CALL MAT23_VEC_S8
+        LD HL,(MAT_OUT)
+        LD DE,27
+        OR A
+        SBC HL,DE
+        JR NZ,M23_BAD
+        LD HL,(MAT_OUT+2)
+        LD DE,47
+        OR A
+        SBC HL,DE
+        JR M23_SHOW
+M23_BAD:
+        OR 1
+M23_SHOW:
+        LD HL,MSG_MAT23
+        CALL REPORT_Z
+
+        LD IX,MAT3_COEFF
+        LD IY,MAT3_VEC
+        LD DE,MAT_OUT
+        CALL MAT3_VEC_S8
+        LD HL,(MAT_OUT)
+        LD DE,14
+        OR A
+        SBC HL,DE
+        JR NZ,M3_BAD
+        LD HL,(MAT_OUT+2)
+        LD DE,#FFF9
+        OR A
+        SBC HL,DE
+        JR NZ,M3_BAD
+        LD HL,(MAT_OUT+4)
+        LD DE,6
+        OR A
+        SBC HL,DE
+        JR M3_SHOW
+M3_BAD:
+        OR 1
+M3_SHOW:
+        LD HL,MSG_MAT3
+        CALL REPORT_Z
+
         LD A,(FAIL_COUNT)
         OR A
         LD HL,MSG_ALL
@@ -500,7 +717,7 @@ MAT_VEC1: DB 6,8
 ; [[-1,2],[3,-4]] * [4,-5] = [-14,32]
 MAT_COEFF2: DB #FF,2,3,#FC
 MAT_VEC2: DB 4,#FB
-MSG_TITLE: DB 13,10,'QLIB MATH + MATRIX v0.2',13,10,0
+MSG_TITLE: DB 13,10,'QLIB MATH + MATRIX v0.3',13,10,0
 MSG_ADD: DB 'ADD8: ',0
 MSG_ADD_WRAP: DB 'ADD8 WRAP: ',0
 MSG_SUB: DB 'SUB8: ',0
@@ -520,6 +737,13 @@ MSG_LCG: DB 'LCG16: ',0
 MSG_SMUL: DB 'MUL S8: ',0
 MSG_MAT1: DB 'MATRIX 2x2: ',0
 MSG_MAT2: DB 'MATRIX SIGNED: ',0
+MAT23_COEFF: DB 1,2,5,3,4,#FD
+MAT3_COEFF: DB 1,2,3,#FF,0,1,2,#FE,1
+MAT3_VEC: DB 1,2,3
+MSG_MUL16: DB 'MUL16: ',0
+MSG_MUL16WRAP: DB 'MUL16 WRAP: ',0
+MSG_MAT23: DB 'MATRIX 2x3: ',0
+MSG_MAT3: DB 'MATRIX 3x3: ',0
 MSG_ALL: DB 'ALL TESTS: ',0
 MSG_PASS: DB 'PASS',13,10,0
 MSG_FAIL: DB 'FAIL',13,10,0
