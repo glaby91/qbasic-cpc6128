@@ -664,12 +664,12 @@ M23_SHOW:
         SBC HL,DE
         JR NZ,M3_BAD
         LD HL,(MAT_OUT+2)
-        LD DE,#FFF9
+        LD DE,2
         OR A
         SBC HL,DE
         JR NZ,M3_BAD
         LD HL,(MAT_OUT+4)
-        LD DE,6
+        LD DE,1
         OR A
         SBC HL,DE
         JR M3_SHOW
