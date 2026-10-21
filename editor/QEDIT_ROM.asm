@@ -497,70 +497,7 @@ COPY_ROM_NEXT:
         INC HL
         INC DE
         DJNZ COPY_ROM_NEXT
-COPY_
-; Each wrapper is 17 bytes; only absolute calls to firmware, no ROM-local
-; references or jumps. Restore all CAS return registers/flags after selecting
-; upper ROM 1. Core CAS operation is executed while in RAM.
-DISK_BRIDGE_ROM:
-BRIDGE_IMAGE_IN_OPEN:
-        DB #CD
-        DW CAS_IN_OPEN
-        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
-        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
-        DB #CD
-        DW #B90F             ; KL ROM SELECT
-        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
-BRIDGE_IMAGE_IN_CLOSE:
-        DB #CD
-        DW CAS_IN_CLOSE
-        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
-        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
-        DB #CD
-        DW #B90F             ; KL ROM SELECT
-        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
-BRIDGE_IMAGE_IN_CHAR:
-        DB #CD
-        DW CAS_IN_CHAR
-        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
-        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
-        DB #CD
-        DW #B90F             ; KL ROM SELECT
-        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
-BRIDGE_IMAGE_OUT_OPEN:
-        DB #CD
-        DW CAS_OUT_OPEN
-        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
-        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
-        DB #CD
-        DW #B90F             ; KL ROM SELECT
-        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
-BRIDGE_IMAGE_OUT_CLOSE:
-        DB #CD
-        DW CAS_OUT_CLOSE
-        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
-        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
-        DB #CD
-        DW #B90F             ; KL ROM SELECT
-        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
-BRIDGE_IMAGE_OUT_CHAR:
-        DB #CD
-        DW CAS_OUT_CHAR
-        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
-        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
-        DB #CD
-        DW #B90F             ; KL ROM SELECT
-        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
-BRIDGE_IMAGE_OUT_ABANDON:
-        DB #CD
-        DW CAS_OUT_ABANDON
-        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
-        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
-        DB #CD
-        DW #B90F             ; KL ROM SELECT
-        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
-DISK_BRIDGE_END:
-
-ROM_END:
+COPY_ROM_END:
         LD A,(HL)
         CP #FF
         JR Z,COPY_ROM_PAD
@@ -2175,6 +2112,69 @@ DEMO_TEXT:
         DB '    PRINT texte; i',0
         DB 'NEXT i',0
         DB 'END',255
+
+; Each wrapper is 17 bytes; only absolute calls to firmware, no ROM-local
+; references or jumps. Restore all CAS return registers/flags after selecting
+; upper ROM 1. Core CAS operation is executed while in RAM.
+DISK_BRIDGE_ROM:
+BRIDGE_IMAGE_IN_OPEN:
+        DB #CD
+        DW CAS_IN_OPEN
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_IN_CLOSE:
+        DB #CD
+        DW CAS_IN_CLOSE
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_IN_CHAR:
+        DB #CD
+        DW CAS_IN_CHAR
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_OUT_OPEN:
+        DB #CD
+        DW CAS_OUT_OPEN
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_OUT_CLOSE:
+        DB #CD
+        DW CAS_OUT_CLOSE
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_OUT_CHAR:
+        DB #CD
+        DW CAS_OUT_CHAR
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+BRIDGE_IMAGE_OUT_ABANDON:
+        DB #CD
+        DW CAS_OUT_ABANDON
+        DB #F5,#C5,#D5,#E5  ; PUSH AF,BC,DE,HL
+        DB #0E,1             ; LD C,1 (QEDIT is installed in ROM slot 1)
+        DB #CD
+        DW #B90F             ; KL ROM SELECT
+        DB #E1,#D1,#C1,#F1,#C9 ; POP HL,DE,BC,AF ; RET
+DISK_BRIDGE_END:
+
 
 ROM_END:
         DEFS #10000-$,#FF
