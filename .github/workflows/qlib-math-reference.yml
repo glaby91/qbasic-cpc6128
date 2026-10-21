@@ -1,0 +1,20 @@
+name: QLIB math design reference checks
+on:
+  push:
+    branches: [qlib-math-v030-architecture]
+    paths:
+      - 'qlib/services.json'
+      - 'tests/reference/**'
+      - '.github/workflows/qlib-math-reference.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate service manifest
+        run: python3 -m json.tool qlib/services.json > /dev/null
+      - name: Exhaustive reference vector oracle
+        run: python3 tests/reference/math_oracle.py
