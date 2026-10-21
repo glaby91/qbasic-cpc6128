@@ -13,7 +13,7 @@ INIT:
         RET
 TEST:
         LD HL,MSG
-        CALL PRINT
+        CALL MAT_PRINT_Z
         LD IX,COEFF
         LD IY,VEC
         LD DE,MAT_RESULT
@@ -29,11 +29,11 @@ TEST:
         SBC HL,DE
         JR NZ,BAD
         LD HL,GOOD
-        JR PRINT
+        JR MAT_PRINT_Z
 BAD:
         LD HL,BAD_MSG
-        JR PRINT
-PRINT:
+        JR MAT_PRINT_Z
+MAT_PRINT_Z:
         LD A,(HL)
         OR A
         RET Z
@@ -41,7 +41,7 @@ PRINT:
         CALL #BB5A
         POP HL
         INC HL
-        JR PRINT
+        JR MAT_PRINT_Z
 MSG: DB 13,10,'QLIB MATRIX 2x2: ',0
 GOOD: DB 'PASS',13,10,0
 BAD_MSG: DB 'FAIL',13,10,0
