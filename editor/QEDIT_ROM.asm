@@ -1,4 +1,4 @@
-; QBasic CPC6128 -- QEDIT editor ROM v0.4.2 build 005 (navigation cache correction)
+; QBasic CPC6128 -- QEDIT editor ROM v0.4.2 build 007 (save isolation) (navigation cache correction)
 ; Compatible Amstrad CPC6128 expansion ROM, standard MODE 2 (80x25).
 ; Install as upper ROM slot 1; from BASIC: MEMORY &5FFF : |QEDIT
 ; MEMORY must be set BEFORE launch to protect #6000..#A993.
@@ -1247,6 +1247,11 @@ PREPARE_DISK_NAME:
 
 ; Save compressed program as readable DOS-compatible ASCII .BAS.
 SAVE_FILE:
+        ; Diagnostic B007: deliberately perform NO disk/CAS calls.
+        ; If Ctrl+S still resets, failure is outside the CAS disk path.
+        LD HL,MSG_SAVE_DIAGNOSTIC
+        JP SHOW_MESSAGE
+SAVE_FILE_REAL:
         CALL COMMIT_DIRTY
         JP NC,STORE_ERROR_MESSAGE
         CALL PREPARE_DISK_NAME
@@ -2031,6 +2036,8 @@ MSG_HELP:
         DB 'Ctrl+T menus; Ctrl+G ligne; Ctrl+S/O/N; Esc     ',0
 MSG_NO_RUN:
         DB 'Execution QBasic: ROM moteur non encore installee. Tapez une touche.       ',0
+MSG_SAVE_DIAGNOSTIC:
+        DB 'B007: Ctrl+S recu; aucun acces disque. Tapez une touche.                        ',0
 MSG_SAVED:
         DB 'DEMO.BAS enregistre. Tapez une touche.                                       ',0
 MSG_LIMIT:
