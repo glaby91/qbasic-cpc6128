@@ -1,14 +1,16 @@
-; QLIB UNIFIED MATH v0.4.1 — CPC6128 ROM ; startup-safe RSX |MALLTEST
+; QLIB UNIFIED MATH v0.4.2 — CPC6128 ROM ; startup-safe RSX |MALLTEST
         ORG #C000
-        DB 1,0,4,1
+        DB 1,0,4,2
         DW RSX_NAMES
         JP ROM_INIT
         JP RUN_TESTS
         JP RUN_BENCH
+        JP SHOW_BENCH
 RSX_NAMES:
         DB 'QLIB','M'+#80
         DB 'MALLTES','T'+#80
         DB 'MBENC','H'+#80
+        DB 'MRESUL','T'+#80
         DB 0
 ROM_INIT:
         SCF
@@ -863,7 +865,7 @@ MAT_VEC1: DB 6,8
 ; [[-1,2],[3,-4]] * [4,-5] = [-14,32]
 MAT_COEFF2: DB #FF,2,3,#FC
 MAT_VEC2: DB 4,#FB
-MSG_TITLE: DB 13,10,'QLIB MATH + MATRIX v0.4.1',13,10,0
+MSG_TITLE: DB 13,10,'QLIB MATH + MATRIX v0.4.2',13,10,0
 MSG_ADD: DB 'ADD8: ',0
 MSG_ADD_WRAP: DB 'ADD8 WRAP: ',0
 MSG_SUB: DB 'SUB8: ',0
@@ -940,5 +942,36 @@ BA_LOOP:
         LD (BENCH_ADD_RESULT),HL
         RET
 BENCH_COUNTER EQU #9014
+
+
+; |MRESULT checks the benchmark result without adding display overhead to |MBENCH.
+SHOW_BENCH:
+        LD HL,MSG_BENCH_HEADER
+        CALL PRINT_Z
+        LD HL,(BENCH_MUL_RESULT)
+        LD DE,221
+        OR A
+        SBC HL,DE
+        LD HL,MSG_BENCH_MUL
+        CALL SHOW_CHECK
+        LD HL,(BENCH_ADD_RESULT)
+        LD DE,10000
+        OR A
+        SBC HL,DE
+        LD HL,MSG_BENCH_ADD
+        CALL SHOW_CHECK
+        RET
+SHOW_CHECK:
+        PUSH AF
+        CALL PRINT_Z
+        POP AF
+        LD HL,MSG_PASS
+        JR Z,SHOW_OK
+        LD HL,MSG_FAIL
+SHOW_OK:
+        JP PRINT_Z
+MSG_BENCH_HEADER: DB 13,10,'QLIB BENCH RESULTS v0.4.2',13,10,0
+MSG_BENCH_MUL: DB '10000 MUL8: ',0
+MSG_BENCH_ADD: DB '10000 ADD16: ',0
 
         DEFS #10000-$,#FF
