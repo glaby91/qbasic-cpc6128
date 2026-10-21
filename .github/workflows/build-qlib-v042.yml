@@ -1,7 +1,7 @@
 name: Build QLIB v0.4.2 benchmark
 on:
   push:
-    branches: [qlib-v042-benchmark]
+    branches: [qlib-v042-benchmark-results]
   workflow_dispatch:
 permissions:
   contents: read
