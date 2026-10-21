@@ -14,3 +14,7 @@ Utiliser le workflow GitHub Actions ou assembler `editor/QEDIT_ROM.asm` avec RAS
 Documentation : [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md), [LANGUAGE_TARGET.md](LANGUAGE_TARGET.md), [language/README.md](language/README.md).
 
 Projet extrait sans suppression ni modification des branches historiques du dépôt `glaby91/moteur3d`.
+
+## Suivi des versions
+
+Voir [PROJECT_STATUS.md](PROJECT_STATUS.md) pour les branches, les builds GitHub Actions, les versions et les problèmes connus. Les ROM de développement sont conservées sur leurs branches et ne sont pas fusionnées automatiquement dans `main`.
