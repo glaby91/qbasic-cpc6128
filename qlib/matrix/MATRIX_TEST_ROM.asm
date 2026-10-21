@@ -46,6 +46,6 @@ GOOD: DB 'PASS',13,10,0
 FAIL: DB 'FAIL',13,10,0
 COEFF: DB 1,2,3,4
 VEC: DB 6,8
-OUT: DEFS 4,0
+OUT EQU #8000    ; temporary RAM output during RSX test (not ROM storage)
         INCLUDE 'MATRIX_S8.asm'
         DEFS #10000-$,#FF
