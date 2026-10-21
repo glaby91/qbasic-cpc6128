@@ -1,0 +1,25 @@
+name: Build QLIB MATRIX 0.1
+on:
+  push:
+    branches: [qlib-matrix-0.1]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git clone --depth 1 --branch v3.2.4bis https://github.com/EdouardBERGE/rasm.git /tmp/rasm-src
+          make -C /tmp/rasm-src release
+      - run: |
+          set -euo pipefail
+          cd qlib/matrix
+          /tmp/rasm-src/rasm.exe MATRIX_TEST_ROM.asm -ob QLIB_MATRIX_V001_TEST.ROM
+          test "$(stat -c%s QLIB_MATRIX_V001_TEST.ROM)" -eq 16384
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QLIB-MATRIX-v0.1-TEST
+          path: qlib/matrix/QLIB_MATRIX_V001_TEST.ROM
+          if-no-files-found: error
