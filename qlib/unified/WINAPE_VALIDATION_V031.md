@@ -6,7 +6,7 @@ L'utilisateur confirme que **tous les tests affichent PASS** après installation
 
 ## Portée
 - Les 23 contrôles embarqués de calcul entier et des matrices 2×2, 2×3 et 3×3 ont été exécutés avec résultat PASS selon le retour utilisateur.
-- Le problème de lancement automatique a été corrigé dans le code par la séparation des points d'entrée d'initialisation et de commande RSX. Le retour « tout est PASS » ne constitue pas à lui seul une confirmation explicite de la disparition de l'artefact visuel.
+- Le problème de lancement automatique a été corrigé dans le code par la séparation des points d'entrée d'initialisation et de commande RSX. L'utilisateur a ensuite confirmé explicitement que **le lancement automatique et l'artefact visuel ont disparu** sous WinAPE avec la v0.3.1.
 - GitHub Actions run 39644778672 : compilation réussie, ROM de 16384 octets, **1448 octets occupés avant le remplissage FF**, 14936 octets libres.
 - Ce n'est pas une validation exhaustive de toutes les entrées ni une conformité QBX 7.1 complète.
 
