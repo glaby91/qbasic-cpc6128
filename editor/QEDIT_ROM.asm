@@ -1,4 +1,4 @@
-; QBasic CPC6128 -- QEDIT editor ROM v0.4.2 build 007 (save isolation) (navigation cache correction)
+; QBasic CPC6128 -- QEDIT editor ROM v0.4.2 build 008 (staged CAS probes) (navigation cache correction)
 ; Compatible Amstrad CPC6128 expansion ROM, standard MODE 2 (80x25).
 ; Install as upper ROM slot 1; from BASIC: MEMORY &5FFF : |QEDIT
 ; MEMORY must be set BEFORE launch to protect #6000..#A993.
@@ -98,6 +98,7 @@ DECODE_DEST     EQU #885E
 STORE_ERROR     EQU #8860
 IO_COL          EQU #8861
 SAVE_INDEX      EQU #8862
+SAVE_PROBE_STAGE EQU #8888
 DEMO_SOURCE     EQU #8864
 STRESS_INDEX    EQU #8866
 ; Go-to-line input state. #8870..#887A lies outside the paged RAM window
@@ -143,6 +144,8 @@ EDITOR_START:
         LD BC,DISK_BRIDGE_END-DISK_BRIDGE_ROM
         LDIR
         ; BASIC must have reserved DOC_BASE..IO_BUFFER+2047 using MEMORY &5FFF.
+        XOR A
+        LD (SAVE_PROBE_STAGE),A
         CALL SAVE_DISPLAY_STATE
         CALL NEW_DOCUMENT
         CALL DEMO_DOCUMENT
@@ -1247,9 +1250,59 @@ PREPARE_DISK_NAME:
 
 ; Save compressed program as readable DOS-compatible ASCII .BAS.
 SAVE_FILE:
-        ; Diagnostic B007: deliberately perform NO disk/CAS calls.
-        ; If Ctrl+S still resets, failure is outside the CAS disk path.
-        LD HL,MSG_SAVE_DIAGNOSTIC
+        LD A,(SAVE_PROBE_STAGE)
+        INC A
+        CP 5
+        JR C,SAVE_PROBE_SET
+        LD A,1
+SAVE_PROBE_SET:
+        LD (SAVE_PROBE_STAGE),A
+        CP 1
+        JR Z,SAVE_PROBE_1
+        CP 2
+        JR Z,SAVE_PROBE_2
+        CP 3
+        JR Z,SAVE_PROBE_3
+        JP SAVE_PROBE_4
+SAVE_PROBE_1:
+        CALL COMMIT_DIRTY
+        LD HL,MSG_PROBE_1
+        JP SHOW_MESSAGE
+SAVE_PROBE_2:
+        CALL PREPARE_DISK_NAME
+        LD HL,MSG_PROBE_2
+        JP SHOW_MESSAGE
+SAVE_PROBE_3:
+        LD HL,DISK_BRIDGE_RAM
+        LD A,(HL)
+        CP #CD
+        JR NZ,SAVE_PROBE_BAD
+        LD HL,MSG_PROBE_3
+        JP SHOW_MESSAGE
+SAVE_PROBE_BAD:
+        LD HL,MSG_PROBE_BAD
+        JP SHOW_MESSAGE
+SAVE_PROBE_4:
+        ; Visible marker rendered BEFORE firmware invocation.
+        ; One disposable file, no program data written.
+        LD HL,#0118
+        CALL TXT_SET_CURSOR
+        LD HL,MSG_PROBE_4
+        CALL PRINT_STRING
+        LD HL,PROBE_FILE_NAME
+        LD DE,FILE_NAME_RAM
+        LD BC,8
+        LDIR
+        LD HL,FILE_NAME_RAM
+        LD B,8
+        LD DE,IO_BUFFER
+        CALL BR_OUT_OPEN
+        JR NC,SAVE_PROBE_OPEN_FAIL
+        CALL BR_OUT_ABANDON
+        LD HL,MSG_PROBE_OPEN_OK
+        JP SHOW_MESSAGE
+SAVE_PROBE_OPEN_FAIL:
+        LD HL,MSG_PROBE_OPEN_FAIL
         JP SHOW_MESSAGE
 SAVE_FILE_REAL:
         CALL COMMIT_DIRTY
@@ -2027,7 +2080,7 @@ MSG_ABOUT:      DB 'QEDIT v0.4.2 - CPC6128 16Ko ROM - edition sans numeros de li
 HEADER_TEXT:
         DB ' Fichier  Edition  Recherche  Execution  Debogage  Options  Fenetre  Aide   ',0
 TITLE_TEXT:
-        DB '                         [ DEMO.BAS ]        QEDIT v0.4.2 B007',0
+        DB '                         [ DEMO.BAS ]        QEDIT v0.4.2 B008',0
 STATUS_TEXT:
         DB 'Ligne:       Col:     INS  |  MODE 2  |  1500 lignes max                 ',0
 FOOTER_TEXT:
@@ -2036,6 +2089,14 @@ MSG_HELP:
         DB 'Ctrl+T menus; Ctrl+G ligne; Ctrl+S/O/N; Esc     ',0
 MSG_NO_RUN:
         DB 'Execution QBasic: ROM moteur non encore installee. Tapez une touche.       ',0
+PROBE_FILE_NAME: DB 'B008.TMP'
+MSG_PROBE_1: DB 'B008 Etape 1: COMMIT_DIRTY termine. Touche; Ctrl+S suivant.       ',0
+MSG_PROBE_2: DB 'B008 Etape 2: nom en RAM. Touche; Ctrl+S suivant.               ',0
+MSG_PROBE_3: DB 'B008 Etape 3: relais RAM present. Etape 4 ACCES DISQUE!        ',0
+MSG_PROBE_BAD: DB 'B008 Etape 3 ECHEC: relais RAM absent.                         ',0
+MSG_PROBE_4: DB 'B008 Etape 4: avant CAS OUT OPEN (disquette TEST).               ',0
+MSG_PROBE_OPEN_OK: DB 'B008 CAS OPEN OK; abandon effectue.                             ',0
+MSG_PROBE_OPEN_FAIL: DB 'B008 CAS OPEN retour erreur, sans reset.                       ',0
 MSG_SAVE_DIAGNOSTIC:
         DB 'B007: Ctrl+S recu; aucun acces disque. Tapez une touche.                        ',0
 MSG_SAVED:
