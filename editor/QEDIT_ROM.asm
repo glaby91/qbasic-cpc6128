@@ -1,4 +1,4 @@
-; QBasic CPC6128 -- QEDIT editor ROM v0.4.2 build 008 (staged CAS probes) (navigation cache correction)
+; QBasic CPC6128 -- QEDIT editor ROM v0.4.2 build 009 (CAS return trace) (navigation cache correction)
 ; Compatible Amstrad CPC6128 expansion ROM, standard MODE 2 (80x25).
 ; Install as upper ROM slot 1; from BASIC: MEMORY &5FFF : |QEDIT
 ; MEMORY must be set BEFORE launch to protect #6000..#A993.
@@ -98,7 +98,9 @@ DECODE_DEST     EQU #885E
 STORE_ERROR     EQU #8860
 IO_COL          EQU #8861
 SAVE_INDEX      EQU #8862
-SAVE_PROBE_STAGE EQU #88B0  ; isolated from TOK_INVALID_FLAG #8888 and TOK_ERRORS #8890..#88A4
+SAVE_PROBE_STAGE EQU #88B0  ; B008 stage counter
+CAS_TRACE_MARK EQU #88B1     ; B009 persistent RAM trace
+BR_TRACE_OUT_OPEN EQU #8D00  ; independent RAM stub outside the 7 x 17-byte bridges
 DEMO_SOURCE     EQU #8864
 STRESS_INDEX    EQU #8866
 ; Go-to-line input state. #8870..#887A lies outside the paged RAM window
@@ -143,9 +145,14 @@ EDITOR_START:
         LD DE,DISK_BRIDGE_RAM
         LD BC,DISK_BRIDGE_END-DISK_BRIDGE_ROM
         LDIR
+        LD HL,CAS_TRACE_IMAGE
+        LD DE,BR_TRACE_OUT_OPEN
+        LD BC,CAS_TRACE_END-CAS_TRACE_IMAGE
+        LDIR
         ; BASIC must have reserved DOC_BASE..IO_BUFFER+2047 using MEMORY &5FFF.
         XOR A
         LD (SAVE_PROBE_STAGE),A
+        LD (CAS_TRACE_MARK),A
         CALL SAVE_DISPLAY_STATE
         CALL NEW_DOCUMENT
         CALL DEMO_DOCUMENT
@@ -1283,6 +1290,9 @@ SAVE_PROBE_BAD:
         LD HL,MSG_PROBE_BAD
         JP SHOW_MESSAGE
 SAVE_PROBE_4:
+        ; B009 marks 10 in RAM before entering independent stub at #8D00.
+        LD A,#10
+        LD (CAS_TRACE_MARK),A
         ; Visible marker rendered BEFORE firmware invocation.
         ; One disposable file, no program data written.
         LD HL,#0118
@@ -1296,7 +1306,7 @@ SAVE_PROBE_4:
         LD HL,FILE_NAME_RAM
         LD B,8
         LD DE,IO_BUFFER
-        CALL BR_OUT_OPEN
+        CALL BR_TRACE_OUT_OPEN
         JR NC,SAVE_PROBE_OPEN_FAIL
         CALL BR_OUT_ABANDON
         LD HL,MSG_PROBE_OPEN_OK
@@ -2184,6 +2194,25 @@ DEMO_TEXT:
 ; Each wrapper is 17 bytes; only absolute calls to firmware, no ROM-local
 ; references or jumps. Restore all CAS return registers/flags after selecting
 ; upper ROM 1. Core CAS operation is executed while in RAM.
+; B009 trace: copy this stub into RAM #8D00 before invoking AMSDOS.
+; RAM #88B1 markers: 10=before stub, 11=immediately before CAS,
+; 22=CAS returned, 33=upper ROM select completed.
+; Note: no calls into upper ROM between CAS invocation and ROM select.
+CAS_TRACE_IMAGE:
+        DB #3E,#11,#32
+        DW CAS_TRACE_MARK
+        DB #CD
+        DW CAS_OUT_OPEN
+        DB #F5,#C5,#D5,#E5  ; protect CAS results
+        DB #3E,#22,#32
+        DW CAS_TRACE_MARK
+        DB #0E,1,#CD
+        DW #B90F             ; KL ROM SELECT QEDIT ROM slot 1
+        DB #3E,#33,#32
+        DW CAS_TRACE_MARK
+        DB #E1,#D1,#C1,#F1,#C9
+CAS_TRACE_END:
+
 DISK_BRIDGE_ROM:
 BRIDGE_IMAGE_IN_OPEN:
         DB #CD
