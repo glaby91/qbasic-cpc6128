@@ -1,7 +1,7 @@
 name: Build QEDIT CPC6128 ROM
 on:
   push:
-    branches: [main]
+    branches: [main, qedit-b008-save-probes]
     paths:
       - 'editor/**'
       - '.github/workflows/build-qedit.yml'
@@ -21,12 +21,12 @@ jobs:
         run: |
           set -euo pipefail
           cd editor
-          /tmp/rasm-src/rasm.exe QEDIT_ROM.asm -ob QEDIT_V042_B005.ROM
-          test "$(stat -c%s QEDIT_V042_B005.ROM)" -eq 16384
-          python3 -c 'b=open("QEDIT_V042_B005.ROM","rb").read(); n=len(b.rstrip(bytes([255]))); print("USED_BYTES",n,"FREE_BYTES",len(b)-n)'
+          /tmp/rasm-src/rasm.exe QEDIT_ROM.asm -ob QEDIT_V042_B008.ROM
+          test "$(stat -c%s QEDIT_V042_B008.ROM)" -eq 16384
+          python3 -c 'b=open("QEDIT_V042_B008.ROM","rb").read(); n=len(b.rstrip(bytes([255]))); print("USED_BYTES",n,"FREE_BYTES",len(b)-n)'
       - name: Upload ROM
         uses: actions/upload-artifact@v4
         with:
-          name: QEDIT-v0.4.2-B005-ROM
-          path: editor/QEDIT_V042_B005.ROM
+          name: QEDIT-v0.4.2-B008-save-probes-ROM
+          path: editor/QEDIT_V042_B008.ROM
           if-no-files-found: error
